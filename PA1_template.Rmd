@@ -1,0 +1,75 @@
+---
+title: "Project 1"
+author: "Xiaoxiang Zhao"
+date: "2017???<b4>6???<88>23???<a5>"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Loading and preprocessing the data
+Load the data (i.e. read.csv())
+Process/transform the data (if necessary) into a format suitable for your analysis
+```{r echo=TRUE}
+activity<-read.csv("activity.csv") 
+```
+
+What is mean total number of steps taken per day?
+```{r echo=TRUE}
+totalstep<-tapply(activity$steps,activity$date,sum,na.rm=TRUE)
+hist(totalstep,xlab = "Total Step",main = "Histogram of Step")
+print(c("Mean is ",mean(totalstep)))
+print(c("Median is ",median(totalstep)))
+```
+
+What is the average daily activity pattern?
+```{r echo=TRUE}
+meanstep_mn<-tapply(activity$steps,activity$interval,mean,na.rm=TRUE)
+plot(activity[1:288,]$interval,meanstep_mn,type = "l",xlab = "Time Interval",ylab = "Mean Step")
+print(c("The time interval contains maximum number of steps is ", meanstep_mn[which.max(meanstep_mn)]))
+```
+
+Imputing missing values
+```{r echo=true}
+table(is.na(activity)==TRUE)
+table(is.na(activity$date)==TRUE)
+table(is.na(activity$interval==TRUE))
+# Because all the missing data is in the step column , so I suggest use mean of that interval to impute missing value#
+
+newdata<-activity
+for(i in 1:nrow(activity))
+{ if(is.na(activity$steps[i])==TRUE)
+ {cc<-as.character(activity[i,]$interval)
+  newdata$steps[i]<-meanstep_mn[cc]
+  }
+}
+
+totalnew<-tapply(newdata$steps,newdata$date,sum)
+hist(totalnew,xlab = "Total Step",main = "Histogram of New Data")
+print(c("Mean is ",mean(totalnew)))
+print(c("Mean is ",median(totalnew)))
+
+comparasion<-rbind(data.frame(mean=c(mean(totalstep),mean(totalnew)),median=c(median(totalstep),median(totalnew))))
+row.names(comparasion)<-c("with na","no na")  
+comparasion
+```
+
+Are there differences in activity patterns between weekdays and weekends?
+```{r echo= true}
+newdata$Weekday<-c("weekday")
+newdata[weekdays(as.Date(newdata[,"date"])) %in% c("Saturday", "Sunday", "samedi", "dimanche",
+  "?????????","saturday","?????????" ,"sunday", "Samedi", "Dimanche"), ][,"Weekday"] <- c("weekend")
+new_weekday<-subset(newdata,newdata$Weekday == "weekday")
+new_weekend<-subset(newdata,newdata$Weekday == "weekend")
+
+weekday_mean<-tapply(new_weekday$steps,new_weekday$interval,mean)
+weekend_mean<-tapply(new_weekend$steps,new_weekend$interval,mean)
+
+par(mfrow=c(1,2))
+plot(newdata$interval[1:288],weekday_mean,type = "l",xlab = "Interval",ylab = "Mean",main = "weekday")
+plot(newdata$interval[1:288],weekend_mean,type = "l",xlab = "Interval",ylab = "Mean",main = "weekend")
+```
